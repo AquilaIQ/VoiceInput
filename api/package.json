@@ -4,7 +4,8 @@
   "private": true,
   "dependencies": {
     "@vercel/node": "^3.0.0",
-    "openai": "^4.91.0"
+    "openai": "^4.91.0",
+    "@types/node": "^20.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0"
