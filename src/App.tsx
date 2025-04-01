@@ -1,27 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useReactMediaRecorder } from 'react-media-recorder';
 import { Button, Container, Paper, Typography, Box, CircularProgress } from '@mui/material';
 import axios from 'axios';
 import './App.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-
 function App() {
   const [transcription, setTranscription] = useState<string>('');
   const [response, setResponse] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
-
-  useEffect(() => {
-    console.log('Current API_URL:', API_URL);
-    console.log('Environment variable:', process.env.REACT_APP_API_URL);
-  }, []);
 
   const { status, startRecording, stopRecording, mediaBlobUrl: _mediaBlobUrl } = useReactMediaRecorder({
     audio: true,
     onStop: async (blobUrl, blob) => {
       setIsLoading(true);
-      setError('');
       try {
         // Convert blob to base64
         const reader = new FileReader();
@@ -29,28 +20,23 @@ function App() {
         reader.onloadend = async () => {
           const base64Audio = reader.result as string;
           
-          try {
-            // Send to backend for transcription
-            const transcribeResponse = await axios.post(`${API_URL}/api/transcribe`, {
-              audioData: base64Audio
-            });
-            
-            setTranscription(transcribeResponse.data.text);
-            
-            // Get chat response
-            const chatResponse = await axios.post(`${API_URL}/api/chat`, {
-              message: transcribeResponse.data.text
-            });
-            
-            setResponse(chatResponse.data.response);
-          } catch (error: any) {
-            console.error('API error:', error);
-            setError(error.response?.data?.error || error.message || 'An error occurred');
-          }
+          // Send to backend for transcription
+          const transcribeResponse = await axios.post('/api/transcribe', {
+            audioData: base64Audio
+          });
+          
+          setTranscription(transcribeResponse.data.text);
+          
+          // Get chat response
+          const chatResponse = await axios.post('/api/chat', {
+            message: transcribeResponse.data.text
+          });
+          
+          setResponse(chatResponse.data.response);
         };
-      } catch (error: any) {
+      } catch (error) {
         console.error('Error processing audio:', error);
-        setError('Error processing audio. Please try again.');
+        setTranscription('Error processing audio. Please try again.');
       } finally {
         setIsLoading(false);
       }
@@ -87,14 +73,6 @@ function App() {
           {isLoading && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
               <CircularProgress />
-            </Box>
-          )}
-
-          {error && (
-            <Box sx={{ mb: 3 }}>
-              <Typography color="error" gutterBottom>
-                Error: {error}
-              </Typography>
             </Box>
           )}
 

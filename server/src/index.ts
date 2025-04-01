@@ -2,17 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import OpenAI from 'openai';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
-
-// ES modules fix for __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Get the root directory (two levels up from src)
-const rootDir = path.join(__dirname, '../..');
 
 // Validate environment variables
 if (!process.env.OPENAI_API_KEY) {
@@ -33,21 +24,8 @@ if (!process.env.XAI_API_URL) {
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Configure CORS to allow requests from any origin during development
-app.use(cors({
-  origin: '*', // Allow all origins
-  methods: ['GET', 'POST'], // Allow only GET and POST requests
-  allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
-  credentials: true // Allow credentials
-}));
-
+app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-
-// Log the build directory path
-console.log('Build directory path:', path.join(rootDir, 'build'));
-
-// Serve static files from the React build directory
-app.use(express.static(path.join(rootDir, 'build')));
 
 // OpenAI client for Whisper transcription
 const openai = new OpenAI({
@@ -127,11 +105,6 @@ app.post('/api/chat', async (req, res) => {
       details: error.message || 'Unknown error'
     });
   }
-});
-
-// Serve React app for all other routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(rootDir, 'build', 'index.html'));
 });
 
 app.listen(port, () => {
