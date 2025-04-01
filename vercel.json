@@ -3,6 +3,10 @@
   "buildCommand": "pnpm build",
   "installCommand": "pnpm install",
   "outputDirectory": "build",
+  "env": {
+    "REACT_APP_ENV": "production",
+    "REACT_APP_API_BASE": ""
+  }
   "rewrites": [
     {
       "source": "/api/(.*)",
