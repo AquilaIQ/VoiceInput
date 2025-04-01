@@ -1,19 +1,10 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { Readable } from 'stream';
 
 // OpenAI client for Whisper transcription
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-// Convert base64 to readable stream
-const base64ToStream = (base64String: string) => {
-  // Remove the data URL prefix if present
-  const base64Data = base64String.split(',')[1] || base64String;
-  const buffer = Buffer.from(base64Data, 'base64');
-  return Readable.from(buffer);
-};
 
 export default async function handler(
   req: VercelRequest,
@@ -30,13 +21,21 @@ export default async function handler(
       return res.status(400).json({ error: 'No audio data provided' });
     }
     
-    // Convert base64 to stream
-    const audioStream = base64ToStream(audioData);
-    
+    // Remove the data URL prefix if present
+    const base64Data = audioData.split(',')[1] || audioData;
+    const audioBuffer = Buffer.from(base64Data, 'base64');
+
+    // Create a temporary file path
+    const tempFilePath = `/tmp/audio-${Date.now()}.wav`;
+    require('fs').writeFileSync(tempFilePath, audioBuffer);
+
     const transcription = await openai.audio.transcriptions.create({
-      file: audioStream,
+      file: require('fs').createReadStream(tempFilePath),
       model: "whisper-1",
     });
+
+    // Clean up the temporary file
+    require('fs').unlinkSync(tempFilePath);
 
     if (!transcription.text) {
       return res.status(500).json({ error: 'No transcription received' });
